@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Senin Gizli Mesajların</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #f0f0f0; 
+      margin: 0; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+    }
+    .container { 
+      width: 100%; 
+      max-width: 400px; 
+      background: #fff; 
+      border-radius: 10px; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.1); 
+      overflow: hidden; 
+    }
+    .header { 
+      background: #25D366; 
+      color: white; 
+      padding: 10px; 
+      text-align: center; 
+      font-size: 18px; 
+    }
+    #login { 
+      padding: 20px; 
+      text-align: center; 
+    }
+    #app { 
+      display: none; 
+      flex-direction: column; 
+      height: 500px; 
+    }
+    #messages { 
+      flex-grow: 1; 
+      padding: 10px; 
+      overflow-y: auto; 
+      background: #efeae2; 
+    }
+    .message { 
+      background: #dcf8c6; 
+      padding: 8px 12px; 
+      margin: 5px; 
+      border-radius: 10px; 
+      max-width: 70%; 
+      word-wrap: break-word; 
+      align-self: flex-end; 
+      box-shadow: 0 1px 1px rgba(0,0,0,0.1); 
+    }
+    .message small { 
+      font-size: 10px; 
+      color: #555; 
+      display: block; 
+      margin-top: 5px; 
+    }
+    .input-area { 
+      display: flex; 
+      padding: 10px; 
+      background: #f0f0f0; 
+      border-top: 1px solid #ddd; 
+    }
+    input, button { 
+      padding: 10px; 
+      border: none; 
+      border-radius: 20px; 
+      margin: 0 5px; 
+    }
+    input { 
+      flex-grow: 1; 
+      background: #fff; 
+    }
+    button { 
+      background: #25D366; 
+      color: white; 
+      cursor: pointer; 
+    }
+    button:hover { 
+      background: #20b958; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">Senin Gizli Mesajların</div>
+    <div id="login">
+      <input type="password" id="password" placeholder="Şifreni gir">
+      <button onclick="login()">Giriş Yap</button>
+    </div>
+    <div id="app">
+      <div id="messages"></div>
+      <div class="input-area">
+        <input type="text" id="message" placeholder="Mesajını yaz...">
+        <button onclick="sendMessage()">Gönder</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const correctPassword = "ozel123"; // Bunu kendi şifrenle değiştir!
+    let messages = JSON.parse(localStorage.getItem("messages")) || [];
+
+    function login() {
+      const password = document.getElementById("password").value;
+      if (password === correctPassword) {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+        loadMessages();
+      } else {
+        alert("Yanlış şifre!");
+      }
+    }
+
+    function sendMessage() {
+      const messageInput = document.getElementById("message");
+      const content = messageInput.value.trim();
+      if (content) {
+        const message = {
+          content,
+          date: new Date().toLocaleString("tr-TR")
+        };
+        messages.push(message);
+        localStorage.setItem("messages", JSON.stringify(messages));
+        messageInput.value = "";
+        loadMessages();
+      }
+    }
+
+    function loadMessages() {
+      const messagesDiv = document.getElementById("messages");
+      messagesDiv.innerHTML = "";
+      messages.forEach(msg => {
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "message";
+        msgDiv.innerHTML = `${msg.content}<small>${msg.date}</small>`;
+        messagesDiv.appendChild(msgDiv);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Otomatik aşağı kaydır
+    }
+
+    // Enter tuşu ile mesaj gönderme
+    document.getElementById("message").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
