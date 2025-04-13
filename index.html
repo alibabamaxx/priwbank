@@ -3,153 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Senin Gizli Mesajların</title>
+  <title>Özel Not Defterim</title>
   <style>
     body { 
       font-family: Arial, sans-serif; 
-      background: #f0f0f0; 
+      background: #f4f4f9; 
       margin: 0; 
       display: flex; 
       justify-content: center; 
-      align-items: center; 
-      height: 100vh; 
+      padding: 20px; 
     }
     .container { 
+      max-width: 500px; 
       width: 100%; 
-      max-width: 400px; 
       background: #fff; 
       border-radius: 10px; 
-      box-shadow: 0 0 10px rgba(0,0,0,0.1); 
-      overflow: hidden; 
-    }
-    .header { 
-      background: #25D366; 
-      color: white; 
-      padding: 10px; 
-      text-align: center; 
-      font-size: 18px; 
-    }
-    #login { 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
       padding: 20px; 
-      text-align: center; 
     }
-    #app { 
-      display: none; 
-      flex-direction: column; 
-      height: 500px; 
-    }
-    #messages { 
-      flex-grow: 1; 
+    #login { text-align: center; }
+    #app { display: none; }
+    input, textarea, button { 
+      width: 100%; 
+      margin: 10px 0; 
       padding: 10px; 
-      overflow-y: auto; 
-      background: #efeae2; 
+      border: 1px solid #ddd; 
+      border-radius: 5px; 
+      box-sizing: border-box; 
     }
-    .message { 
-      background: #dcf8c6; 
-      padding: 8px 12px; 
-      margin: 5px; 
-      border-radius: 10px; 
-      max-width: 70%; 
-      word-wrap: break-word; 
-      align-self: flex-end; 
-      box-shadow: 0 1px 1px rgba(0,0,0,0.1); 
-    }
-    .message small { 
-      font-size: 10px; 
-      color: #555; 
-      display: block; 
-      margin-top: 5px; 
-    }
-    .input-area { 
-      display: flex; 
-      padding: 10px; 
-      background: #f0f0f0; 
-      border-top: 1px solid #ddd; 
-    }
-    input, button { 
-      padding: 10px; 
-      border: none; 
-      border-radius: 20px; 
-      margin: 0 5px; 
-    }
-    input { 
-      flex-grow: 1; 
-      background: #fff; 
-    }
+    textarea { resize: vertical; min-height: 100px; }
     button { 
-      background: #25D366; 
+      background: #6200ea; 
       color: white; 
+      border: none; 
       cursor: pointer; 
     }
-    button:hover { 
-      background: #20b958; 
+    button:hover { background: #7f39fb; }
+    .note { 
+      background: #f9f9f9; 
+      padding: 10px; 
+      margin: 10px 0; 
+      border-radius: 5px; 
+      border-left: 4px solid #6200ea; 
     }
+    .note h3 { margin: 0 0 5px; }
+    .note small { color: #555; }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
   <div class="container">
-    <div class="header">Senin Gizli Mesajların</div>
     <div id="login">
+      <h2>Özel Not Defterim</h2>
       <input type="password" id="password" placeholder="Şifreni gir">
       <button onclick="login()">Giriş Yap</button>
     </div>
     <div id="app">
-      <div id="messages"></div>
-      <div class="input-area">
-        <input type="text" id="message" placeholder="Mesajını yaz...">
-        <button onclick="sendMessage()">Gönder</button>
-      </div>
+      <h2>Not Ekle</h2>
+      <input type="text" id="title" placeholder="Not Başlığı">
+      <textarea id="content" placeholder="Notunu yaz..."></textarea>
+      <button onclick="saveNote()">Kaydet</button>
+      <h3>Notlarım</h3>
+      <div id="notes"></div>
     </div>
   </div>
 
   <script>
-    const correctPassword = "ozel123"; // Bunu kendi şifrenle değiştir!
-    let messages = JSON.parse(localStorage.getItem("messages")) || [];
+    // Şifrenin hash'i (SHA-256). Kendi şifreni belirlemek için aşağıdaki adımları izle.
+    const passwordHash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"; // Örnek hash
+    let currentKey = null;
 
     function login() {
       const password = document.getElementById("password").value;
-      if (password === correctPassword) {
+      const inputHash = CryptoJS.SHA256(password).toString();
+      if (inputHash === passwordHash) {
+        currentKey = password; // Şifreyi geçici olarak tutuyoruz (AES için)
         document.getElementById("login").style.display = "none";
-        document.getElementById("app").style.display = "flex";
-        loadMessages();
+        document.getElementById("app").style.display = "block";
+        loadNotes();
       } else {
         alert("Yanlış şifre!");
       }
     }
 
-    function sendMessage() {
-      const messageInput = document.getElementById("message");
-      const content = messageInput.value.trim();
-      if (content) {
-        const message = {
-          content,
+    function saveNote() {
+      const title = document.getElementById("title").value.trim();
+      const content = document.getElementById("content").value.trim();
+      if (title && content) {
+        // Notu şifrele
+        const encryptedContent = CryptoJS.AES.encrypt(content, currentKey).toString();
+        const note = {
+          title,
+          content: encryptedContent,
           date: new Date().toLocaleString("tr-TR")
         };
-        messages.push(message);
-        localStorage.setItem("messages", JSON.stringify(messages));
-        messageInput.value = "";
-        loadMessages();
+        let notes = JSON.parse(localStorage.getItem("notes")) || [];
+        notes.push(note);
+        localStorage.setItem("notes", JSON.stringify(notes));
+        document.getElementById("title").value = "";
+        document.getElementById("content").value = "";
+        loadNotes();
+      } else {
+        alert("Başlık ve içerik boş olamaz!");
       }
     }
 
-    function loadMessages() {
-      const messagesDiv = document.getElementById("messages");
-      messagesDiv.innerHTML = "";
-      messages.forEach(msg => {
-        const msgDiv = document.createElement("div");
-        msgDiv.className = "message";
-        msgDiv.innerHTML = `${msg.content}<small>${msg.date}</small>`;
-        messagesDiv.appendChild(msgDiv);
+    function loadNotes() {
+      const notesDiv = document.getElementById("notes");
+      notesDiv.innerHTML = "";
+      let notes = JSON.parse(localStorage.getItem("notes")) || [];
+      notes.forEach((note, index) => {
+        // Notu çöz
+        let decryptedContent = "Şifreleme hatası";
+        try {
+          const bytes = CryptoJS.AES.decrypt(note.content, currentKey);
+          decryptedContent = bytes.toString(CryptoJS.enc.Utf8) || "Çözülemedi";
+        } catch (e) {
+          console.error("Decryption error:", e);
+        }
+        const noteDiv = document.createElement("div");
+        noteDiv.className = "note";
+        noteDiv.innerHTML = `
+          <h3>${note.title}</h3>
+          <p>${decryptedContent}</p>
+          <small>${note.date}</small>
+          <button onclick="deleteNote(${index})">Sil</button>
+        `;
+        notesDiv.appendChild(noteDiv);
       });
-      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Otomatik aşağı kaydır
     }
 
-    // Enter tuşu ile mesaj gönderme
-    document.getElementById("message").addEventListener("keypress", function(e) {
-      if (e.key === "Enter") {
-        sendMessage();
-      }
-    });
+    function deleteNote(index) {
+      let notes = JSON.parse(localStorage.getItem("notes")) || [];
+      notes.splice(index, 1);
+      localStorage.setItem("notes", JSON.stringify(notes));
+      loadNotes();
+    }
   </script>
 </body>
 </html>
